@@ -1,0 +1,48 @@
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="mecanum_robot">
+  <!-- base_footprint: 地面投影坐标系 -->
+  <link name="base_footprint">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <sphere radius="0.001"/>
+      </geometry>
+    </visual>
+  </link>
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 ${wheel_radius}" rpy="0 0 0"/>
+  </joint>
+  <!-- 底盘基座 -->
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="${base_length} ${base_width} ${base_height}"/>
+      </geometry>
+      <material name="blue">
+        <color rgba="0.2 0.2 0.8 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="${base_length} ${base_width} ${base_height}"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="${base_mass}"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="${base_mass*(base_width*base_width+base_height*base_height)/12}" 
+               ixy="0" ixz="0"
+               iyy="${base_mass*(base_length*base_length+base_height*base_height)/12}" 
+               iyz="0"
+               izz="${base_mass*(base_length*base_length+base_width*base_width)/12}"/>
+    </inertial>
+  </link>
+  <!-- 底盘Gazebo配置 -->
+  <gazebo reference="base_link">
+    <material>Gazebo/Red</material>
+    <gravity>true</gravity>
+  </gazebo>
+</robot>

@@ -1,0 +1,8 @@
+<!-- 组合小车底盘与摄像头与雷达 -->
+<robot name="my_car_camera" xmlns:xacro="http://wiki.ros.org/xacro">
+    <xacro:include filename="00car_param.xacro" />
+    <xacro:include filename="01car_box.xacro" />
+    <xacro:include filename="02car_wheel.xacro" />
+    <xacro:include filename="03car_camera.xacro" />
+    <xacro:include filename="04car_laser.xacro" />
+</robot>

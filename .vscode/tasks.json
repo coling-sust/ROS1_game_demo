@@ -1,0 +1,14 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "CMake: 生成",
+			"command": "catkin_make",
+			
+			"group": {"kind":"build", "isDefault": true},
+			"problemMatcher": [],
+			"detail": "CMake 模板 生成 任务"
+		}
+	]
+}

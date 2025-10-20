@@ -1,0 +1,102 @@
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="mecanum_robot">
+    <!-- 摄像头支架 -->
+    <link name="camera_support">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <cylinder radius="${camera_support_radius}" length="${camera_support_height}" />
+            </geometry>
+            <material name="Gray">
+                <color rgba="0.5 0.5 0.5 1.0" />
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <cylinder radius="${camera_support_radius}" length="${camera_support_height}" />
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.1" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001" />
+        </inertial>
+    </link>
+    <joint name="camera_support_joint" type="fixed">
+        <parent link="base_link" />
+        <child link="camera_support" />
+        <origin xyz="${base_length/2 - camera_size*2} 0 ${base_height/2 + camera_support_height/2}"
+            rpy="0 0 0" />
+    </joint>
+    <gazebo reference="camera_support">
+        <material>Gazebo/Gray</material>
+    </gazebo>
+    <!-- 中间支架 -->
+    <link name="camera_mount" />
+
+    <joint name="camera_mount_joint" type="fixed">
+        <parent link="camera_support" />
+        <child link="camera_mount" />
+        <origin xyz="0 0 ${camera_support_height/2}" rpy="0 -0.174 0" />
+    </joint>
+    <!-- 摄像头 -->
+    <link name="camera_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="${camera_size} ${camera_size} ${camera_size}" />
+            </geometry>
+            <material name="red">
+                <color rgba="1.0 0.0 0.0 1.0" />
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="${camera_size} ${camera_size} ${camera_size}" />
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="0.1" />
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001" />
+        </inertial>
+    </link>
+    <joint name="camera_joint" type="fixed">
+        <parent link="camera_mount" />
+        <child link="camera_link" />
+        <origin xyz="0 0 ${camera_size/2}" rpy="0 0 0" />
+    </joint>
+    <!-- 摄像头 Gazebo 插件 -->
+    <gazebo reference="camera_link">
+        <material>Gazebo/Gray</material>
+        <sensor type="camera" name="camera">
+            <update_rate>30.0</update_rate>
+            <camera name="head">
+                <horizontal_fov>1.3962634</horizontal_fov>
+                <image>
+                    <width>640</width>
+                    <height>480</height>
+                    <format>R8G8B8</format>
+                </image>
+                <clip>
+                    <near>0.02</near>
+                    <far>300</far>
+                </clip>
+                <noise>
+                    <type>gaussian</type>
+                    <mean>0.0</mean>
+                    <stddev>0.007</stddev>
+                </noise>
+            </camera>
+            <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+                <alwaysOn>true</alwaysOn>
+                <updateRate>30.0</updateRate>
+                <cameraName>camera</cameraName>
+                <imageTopicName>image_raw</imageTopicName>
+                <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+                <frameName>camera_link</frameName>
+            </plugin>
+        </sensor>
+    </gazebo>
+</robot>

@@ -1,0 +1,95 @@
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="mecanum_robot">
+    <!-- 麦克纳姆轮宏定义 -->
+    <xacro:macro name="mecanum_wheel" params="prefix reflect_lr reflect_fb">
+        <link name="${prefix}_wheel">
+            <visual>
+                <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+                <geometry>
+                    <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+                </geometry>
+                <material name="black">
+                    <color rgba="0.2 0.2 0.2 1.0"/>
+                </material>
+            </visual>
+            <collision>
+                <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+                <geometry>
+                    <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+                </geometry>
+            </collision>
+            <inertial>
+                <mass value="${wheel_mass}"/>
+                <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+                <inertia ixx="${wheel_mass*(3*wheel_radius*wheel_radius+wheel_width*wheel_width)/12}" 
+                 ixy="0" ixz="0"
+                 iyy="${wheel_mass*(3*wheel_radius*wheel_radius+wheel_width*wheel_width)/12}" 
+                 iyz="0"
+                 izz="${wheel_mass*wheel_radius*wheel_radius/2}"/>
+            </inertial>
+        </link>
+        <joint name="${prefix}_wheel_joint" type="continuous">
+            <parent link="base_link"/>
+            <child link="${prefix}_wheel"/>
+            <origin xyz="${reflect_fb*(base_length/2-wheel_radius)} ${reflect_lr*(base_width/2+wheel_width/2)} 0" rpy="0 0 0"/>
+            <axis xyz="0 1 0"/>
+        </joint>
+        <!-- Gazebo配置 -->
+        <gazebo reference="${prefix}_wheel">
+            <material>Gazebo/Orange</material>
+            <mu1>1</mu1>
+            <mu2>1</mu2>
+            <kp>1000000.0</kp>
+            <kd>10.0</kd>
+            <minDepth>0.001</minDepth>
+            <!-- 最小接触深度 -->
+            <maxVel>1.0</maxVel>
+            <!-- 最大速度 -->
+            <fdir1>1 0 0</fdir1>
+            <!-- 摩擦方向 -->
+        </gazebo>
+    </xacro:macro>
+    <!-- 创建四个麦克纳姆轮 -->
+    <xacro:mecanum_wheel prefix="front_left" reflect_lr="1" reflect_fb="1"/>
+    <xacro:mecanum_wheel prefix="front_right" reflect_lr="-1" reflect_fb="1"/>
+    <xacro:mecanum_wheel prefix="rear_left" reflect_lr="1" reflect_fb="-1"/>
+    <xacro:mecanum_wheel prefix="rear_right" reflect_lr="-1" reflect_fb="-1"/>
+    <!-- 传动实现:用于连接控制器与关节 -->
+    <xacro:macro name="joint_trans" params="joint_name">
+        <!-- Transmission is important to link the joints and the controller -->
+        <transmission name="${joint_name}_trans">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="${joint_name}">
+                <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="${joint_name}_motor">
+                <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+                <mechanicalReduction>1</mechanicalReduction>
+            </actuator>
+        </transmission>
+    </xacro:macro>
+    <!-- 每一个驱动轮都需要配置传动装置 -->
+    <xacro:joint_trans joint_name="front_left_wheel_joint" />
+    <xacro:joint_trans joint_name="front_right_wheel_joint" />
+    <xacro:joint_trans joint_name="rear_left_wheel_joint" />
+    <xacro:joint_trans joint_name="rear_right_wheel_joint" />
+    <!-- 麦克纳姆轮控制器 -->
+    <gazebo>
+        <plugin name="mecanum_controller" filename="libgazebo_ros_planar_move.so">
+            <commandTopic>cmd_vel</commandTopic>
+            <odometryTopic>odom</odometryTopic>
+            <odometryFrame>odom</odometryFrame>
+            <leftFrontJoint>front_left_wheel_joint</leftFrontJoint>
+            <rightFrontJoint>front_right_wheel_joint</rightFrontJoint>
+            <leftRearJoint>rear_left_wheel_joint</leftRearJoint>
+            <rightRearJoint>rear_right_wheel_joint</rightRearJoint>
+            <wheelSeparation>${base_width + wheel_width}</wheelSeparation>
+            <wheelDiameter>${2*wheel_radius}</wheelDiameter>
+            <odometryRate>100.0</odometryRate>
+            <robotBaseFrame>base_footprint</robotBaseFrame>
+            <publishTF>true</publishTF>
+            <publishOdomTF>true</publishOdomTF>
+            <torque>20</torque>
+            <!-- 添加足够的驱动扭矩 -->
+        </plugin>
+    </gazebo>
+</robot>

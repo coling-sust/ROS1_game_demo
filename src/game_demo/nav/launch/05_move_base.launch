@@ -1,0 +1,12 @@
+<launch>
+    <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" clear_params="true">
+        <!-- 成本地图参数 -->
+        <rosparam file="$(find game_demo)/nav/param/costmap_common_params.yaml" command="load" ns="global_costmap" />
+        <rosparam file="$(find game_demo)/nav/param/costmap_common_params.yaml" command="load" ns="local_costmap" />
+        <rosparam file="$(find game_demo)/nav/param/local_costmap_params.yaml" command="load" />
+        <rosparam file="$(find game_demo)/nav/param/global_costmap_params.yaml" command="load" />
+        <rosparam file="$(find game_demo)/nav/param/teb_local_planner.yaml" command="load" />
+        <!-- 指定 base_local_planner 为 Teb -->
+        <param name="base_local_planner" value="teb_local_planner/TebLocalPlannerROS"/>
+    </node>
+</launch>

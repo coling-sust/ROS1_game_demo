@@ -1,0 +1,2 @@
+game_demo
+-DCATKIN_DEVEL_PREFIX=/home/xyxy/game_ws/devel -DCMAKE_INSTALL_PREFIX=/home/xyxy/game_ws/install -G Unix Makefiles

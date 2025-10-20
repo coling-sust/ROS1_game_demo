@@ -1,0 +1,8 @@
+prefix=/home/xyxy/game_ws/devel
+
+Name: game_demo
+Description: Description of game_demo
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

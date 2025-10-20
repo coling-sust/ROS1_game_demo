@@ -1,0 +1,489 @@
+TebLocalPlannerROS:
+  # ==================== 机器人配置参数 ====================
+  odom_topic: odom # 里程计话题名称，用于获取机器人当前速度和位置
+  map_frame: odom # 地图坐标系，通常为 odom 或 map
+
+  # ==================== 轨迹配置 ====================
+  teb_autosize: True # 允许规划器自动调整轨迹时间分辨率（推荐True）
+
+  dt_ref:
+    0.3 # 期望的轨迹时间分辨率（秒）
+    # 轨迹上相邻两个点的时间间隔
+    # 越小：轨迹越精细，计算量越大
+    # 越大：轨迹越粗糙，可能不够平滑
+    # 推荐：0.3-0.5
+
+  dt_hysteresis:
+    0.1 # 时间分辨率的滞后/容差（秒）
+    # 当实际 dt 与 dt_ref 相差超过此值时才调整
+    # 避免频繁调整导致的抖动
+    # 通常设为 dt_ref 的 30%-50%
+
+  min_samples:
+    3 # 轨迹的最小采样点数
+    # 至少要有几个点来描述轨迹
+    # 太少可能导致轨迹不合理
+
+  max_samples:
+    500 # 轨迹的最大采样点数
+    # 限制计算量，防止轨迹点过多
+    # 通常 100-500 即可
+
+  global_plan_overwrite_orientation:
+    True
+    # 是否允许规划器修改全局路径的朝向
+    # True：TEB 可以优化机器人姿态（推荐）
+    # False：严格按照全局路径的朝向
+
+  allow_init_with_backwards_motion:
+    True
+    # 是否允许机器人初始时后退
+    # True：可以倒车来避障或调整姿态
+    # False：只能前进
+
+  max_global_plan_lookahead_dist:
+    0.3
+    # TEB 向前看全局路径的最大距离（米）
+    # 只优化这个距离内的局部路径
+    # 小场地：1.0-2.0m
+    # 大场地：3.0-5.0m
+    # 太小：频繁重规划，不流畅
+    # 太大：计算量大，响应慢
+
+  global_plan_viapoint_sep:
+    -1 # 从全局路径提取途经点的间隔（米）
+    # -1：不使用途经点（推荐麦轮）
+    # >0：每隔此距离提取一个必经点
+    # 0.2-0.5：松散约束
+    # 0.05-0.1：严格跟随全局路径
+
+  global_plan_prune_distance:
+    0.5 # 修剪机器人后方全局路径的距离（米）
+    # 删除已经走过的路径点
+    # 避免机器人倒退
+    # 小机器人：0.3-0.5m
+    # 大机器人：0.8-1.0m
+
+  exact_arc_length:
+    False # 是否使用精确弧长计算
+    # False：近似计算，速度快（推荐）
+    # True：精确计算，速度慢
+
+  feasibility_check_no_poses:
+    5 # 可行性检查时采样的位姿数量
+    # 检查轨迹是否可行（速度、加速度限制）
+    # 越多越精确，但计算量越大
+
+  publish_feedback:
+    False # 是否发布规划器的详细反馈信息
+    # True：发布诊断信息，便于调试
+    # False：节省带宽
+
+  # ==================== 机器人运动学参数 ====================
+  # 全向移动机器人（麦克纳姆轮）
+
+  max_vel_x:
+    1.5 # X轴最大线速度（m/s）- 前进方向
+    # 机器人能达到的最快前进速度
+    # 根据实际电机性能设置
+
+  max_vel_x_backwards:
+    0.4 # X轴最大后退速度（m/s）
+    # 通常比前进速度略慢
+
+  max_vel_y:
+    0.5 # Y轴最大线速度（m/s）- 横向移动
+    # 麦克纳姆轮特有！可以横向平移
+    # 0 表示差分轮无法横移
+
+  max_vel_theta:
+    5.0 # 最大旋转角速度（rad/s）
+    # 2.0 rad/s ≈ 115°/s
+    # 小机器人可以设置更高（2-3）
+    # 大机器人建议保守（0.5-1.5）
+
+  acc_lim_x:
+    1 # X轴最大加速度（m/s²）
+    # 限制前进加速度，避免打滑
+    # 太大：轮子打滑、不稳定
+    # 太小：启动慢、不灵活
+
+  acc_lim_y:
+    0.8 # Y轴最大加速度（m/s²）- 横向
+    # 麦克纳姆轮的横向加速限制
+
+  acc_lim_theta:
+    4.0 # 最大旋转加速度（rad/s²）
+    # 限制旋转加速度
+
+  # ==================== 全向机器人参数 ====================
+  holonomic_robot:
+    True # 关键参数！
+    # True：全向移动（麦轮、全向轮）
+    # False：非完整约束（差分轮）
+
+  # ==================== 机器人尺寸参数 ====================
+  # 基于 15cm x 10cm 的小型底盘
+  footprint_model:
+    type:
+      "polygon" # 机器人轮廓类型
+      # "polygon"：多边形（最常用）
+      # "circular"：圆形
+      # "line"：线段（仅用于测试）
+
+    vertices:
+      [[0.15, 0.125], [0.15, -0.125], [-0.15, -0.125], [-0.15, 0.125]]
+      # 多边形顶点坐标（米）
+      # 以 base_link 为中心
+      # 顺时针或逆时针定义
+      # 示例：15cm(长) x 10cm(宽)
+      # 前右：(0.075, 0.05)
+      # 前左：(0.075, -0.05)
+      # 后左：(-0.075, -0.05)
+      # 后右：(-0.075, 0.05)
+
+  # ==================== 目标点容差 ====================
+  xy_goal_tolerance:
+    0.08 # 到达目标的位置容差（米）
+    # 机器人中心距离目标点多近算到达
+    # 小机器人：0.03-0.08m
+    # 大机器人：0.1-0.2m
+    # 太小：可能永远到不了
+    # 太大：精度不够
+
+  yaw_goal_tolerance:
+    0.08 # 到达目标的角度容差（弧度）
+    # 0.08 rad ≈ 4.6°
+    # 0.1 rad ≈ 5.7°
+    # 0.15 rad ≈ 8.6°
+    # 对朝向要求高的任务设小一点
+
+  free_goal_vel:
+    False # 是否允许机器人带速度到达目标
+    # False：到达目标时速度为0（推荐）
+    # True：可以"冲"过目标点
+
+  complete_global_plan:
+    True # 是否尝试完成整个全局规划
+    # True：尽量跟随全局路径
+    # False：更灵活，但可能偏离
+
+  # ==================== 障碍物参数 ====================
+  min_obstacle_dist:
+    0.1 # 与障碍物的最小期望距离（米）
+    # 机器人会尽量保持这个距离
+    # 小机器人：0.05-0.1m
+    # 大机器人：0.15-0.3m
+    # 狭窄环境可以设小一点
+
+  inflation_dist:
+    0.18 # 障碍物膨胀距离（米）
+    # 在障碍物周围创建缓冲区
+    # 用于成本计算，不是硬约束
+    # 通常是 min_obstacle_dist 的 1.5-2 倍
+
+  include_costmap_obstacles:
+    True # 是否考虑代价地图中的障碍物
+    # True：使用 costmap（推荐）
+    # False：忽略 costmap
+
+  costmap_obstacles_behind_robot_dist:
+    0.5
+    # 考虑机器人后方多远的障碍物（米）
+    # 用于后退时的避障
+    # 小场地：0.5-1.0m
+    # 大场地：1.0-2.0m
+
+  obstacle_poses_affected:
+    30 # 受障碍物影响的轨迹点数量
+    # 越多：避障越平滑，计算量越大
+    # 20-50 较合适
+
+  dynamic_obstacle_inflation_dist:
+    0.18
+    # 动态障碍物的膨胀距离（米）
+    # 通常与 inflation_dist 相同
+
+  include_dynamic_obstacles:
+    True # 是否考虑动态障碍物
+    # True：考虑移动的障碍物
+    # False：仅考虑静态障碍物
+
+  # ==================== 代价地图转换器（高级功能） ====================
+  costmap_converter_plugin:
+    "" # 代价地图转换插件
+    # ""：不使用转换器（默认）
+    # 可将栅格地图转为多边形，提高效率
+
+  costmap_converter_spin_thread:
+    True
+    # 转换器是否使用独立线程
+
+  costmap_converter_rate: 5 # 转换器更新频率（Hz）
+
+  # ==================== 优化参数 ====================
+  no_inner_iterations:
+    5 # 内层优化循环次数
+    # 每次外层迭代中的内层迭代次数
+    # 影响优化精度和速度
+    # 3-5 通常够用
+
+  no_outer_iterations:
+    4 # 外层优化循环次数
+    # 总优化迭代次数
+    # 3-5 通常够用
+    # 太多：计算慢，实时性差
+    # 太少：优化不充分
+
+  optimization_activate:
+    True # 是否激活优化
+    # True：正常工作
+    # False：仅用于调试
+
+  optimization_verbose:
+    False # 是否输出详细优化信息
+    # True：打印调试信息
+    # False：安静模式（推荐）
+
+  penalty_epsilon:
+    0.1 # 惩罚函数的软约束因子
+    # 将硬约束转为软约束
+    # 通常 0.01-0.1
+
+  obstacle_cost_exponent:
+    4 # 障碍物成本的指数
+    # 成本随距离的变化速度
+    # 越大：靠近障碍物时成本增长越快
+    # 1：线性增长
+    # 2：平方增长
+    # 4：更陡峭（推荐）
+
+  # ==================== 优化权重（核心参数！） ====================
+  # 权重越大，优化器越重视该目标
+  # 这些权重需要相互平衡
+
+  weight_max_vel_x:
+    4 # 最大前进速度的权重
+    # 鼓励机器人尽量用最大速度
+    # 设大一点：跑得快
+    # 设小一点：更保守
+
+  weight_max_vel_y:
+    5 # 最大横向速度的权重
+    # 麦轮特有，鼓励使用横移
+
+  weight_max_vel_theta:
+    3 # 最大旋转速度的权重
+    # 鼓励快速旋转
+    # 提高此值可改善旋转慢的问题
+
+  weight_acc_lim_x:
+    1 # 前进加速度限制的权重
+    # 限制加速度，使运动更平滑
+
+  weight_acc_lim_y: 1 # 横向加速度限制的权重
+
+  weight_acc_lim_theta: 1 # 旋转加速度限制的权重
+
+  weight_kinematics_nh:
+    1000 # 非完整运动学约束的权重
+    # 对于全向机器人，可以设很大（1000）
+    # 因为没有非完整约束
+    # 对于差分轮，设小一点（1-10）
+
+  weight_kinematics_forward_drive:
+    1
+    # 前进驱动的权重
+    # 鼓励前进而不是侧移或旋转
+    # 全向机器人可设为 0-1
+    # 差分轮设为 10-100
+
+  weight_kinematics_turning_radius:
+    1
+    # 转弯半径的权重
+    # 限制转弯半径
+    # 全向机器人可设为 1
+    # 差分轮设为 5-10
+
+  weight_optimaltime:
+    2 # 时间最优的权重
+    # 鼓励更快完成任务
+    # 越大：机器人越"急"
+    # 1-2 合适
+    # 太大：可能不稳定
+
+  weight_shortest_path:
+    0 # 最短路径的权重
+    # 鼓励走直线
+    # 通常设为 0，让时间最优主导
+    # 0-1 合适
+
+  weight_obstacle:
+    120 # 障碍物的权重
+    # ⭐ 非常重要！
+    # 越大：越重视避障
+    # 30-100 合适
+    # 太小：撞障碍物
+    # 太大：过度保守，可能卡住
+
+  weight_inflation:
+    0.3 # 障碍物膨胀区域的权重
+    # 在膨胀区的成本
+    # 比 weight_obstacle 小
+    # 0.1-0.5 合适
+
+  weight_dynamic_obstacle:
+    20 # 动态障碍物的权重
+    # 通常比静态障碍物小
+
+  weight_dynamic_obstacle_inflation:
+    0.1
+    # 动态障碍物膨胀权重
+
+  weight_viapoint:
+    1 # 途经点的权重
+    # 鼓励经过指定点
+    # global_plan_viapoint_sep = -1 时无效
+
+  weight_adapt_factor:
+    2 # 自适应权重因子
+    # 用于动态调整其他权重
+    # 1-2 合适
+
+  # ==================== 并行规划（同伦类规划） ====================
+  enable_homotopy_class_planning:
+    True
+    # 是否启用多路径并行规划
+    # True：生成多条候选路径（推荐）
+    # False：只生成一条路径
+    # 优点：能找到更好的路径
+    # 缺点：计算量增加
+
+  enable_multithreading:
+    True # 是否使用多线程
+    # True：并行计算多条路径（推荐）
+    # False：串行计算
+
+  max_number_classes:
+    3 # 最多生成几条候选路径
+    # 2-5 合适
+    # 小场地：2-3
+    # 大场地：3-5
+    # 太多：计算慢
+
+  selection_cost_hysteresis:
+    1.0 # 路径选择的成本滞后
+    # 避免频繁切换路径
+    # 0.5-2.0 合适
+
+  selection_prefer_initial_plan:
+    0.95
+    # 偏好初始规划的权重
+    # 0.9-0.95：稍微偏好初始路径
+    # 1.0：总是选初始路径
+    # 0.5：不偏好
+
+  selection_obst_cost_scale:
+    1.0 # 障碍物成本在路径选择中的缩放
+    # 调整障碍物对路径选择的影响
+
+  selection_alternative_time_cost:
+    False
+    # 是否考虑备选路径的时间成本
+
+  roadmap_graph_no_samples:
+    10 # 路线图采样点数量
+    # 用于生成候选路径
+    # 小场地：8-15
+    # 大场地：15-30
+    # 太多：计算慢
+
+  roadmap_graph_area_width:
+    5 # 路线图区域宽度（米）
+    # 在机器人周围多大范围采样
+    # 小场地：2-4m
+    # 大场地：4-6m
+
+  roadmap_graph_area_length_scale:
+    1.0
+    # 路线图区域长度缩放因子
+
+  h_signature_prescaler:
+    0.5 # H签名预缩放因子
+    # 用于区分不同拓扑路径
+    # 0.5-1.0 通常够用
+
+  h_signature_threshold:
+    0.1 # H签名阈值
+    # 判断两条路径是否属于同一类
+    # 越小：区分越细
+
+  obstacle_heading_threshold:
+    0.45 # 障碍物朝向阈值（弧度）
+    # 约 26°
+    # 用于判断是否绕障碍物
+
+  switching_blocking_period:
+    0.0 # 路径切换阻塞周期（秒）
+    # 切换路径后多久才能再次切换
+    # 0：不阻塞（推荐）
+    # 1-3：避免频繁切换
+
+  viapoints_all_candidates:
+    True # 是否对所有候选路径使用途经点
+    # True：所有路径都考虑途经点
+    # False：仅初始路径考虑
+
+  delete_detours_backwards:
+    True # 是否删除需要后退的迂回路径
+    # True：不走需要倒车的弯路
+    # False：允许倒车绕行
+
+  max_ratio_detours_duration_best_duration:
+    3.0
+    # 迂回路径与最优路径的时间比例上限
+    # 如果迂回路径时间 > 最优路径时间 × 3
+    # 则舍弃该迂回路径
+    # 2-5 合适
+
+  visualize_hc_graph:
+    False # 是否在 RViz 中可视化路线图
+    # True：显示采样点和连接
+    # False：不显示（推荐）
+
+  visualize_with_time_as_z_axis_scale:
+    False
+    # 是否用时间作为 Z 轴显示
+    # 调试用，一般设 False
+
+  # ==================== 恢复行为 ====================
+  shrink_horizon_backup:
+    True # 缩小规划视野作为备用方案
+    # 当找不到可行路径时
+    # True：缩短 lookahead 距离重试
+    # False：直接放弃
+
+  shrink_horizon_min_duration:
+    10 # 缩小视野模式的最短持续时间（秒）
+    # 进入缩小视野模式后至少保持多久
+
+  oscillation_recovery:
+    True # 是否启用震荡恢复
+    # 检测机器人是否在原地震荡
+    # True：检测到震荡后采取措施
+
+  oscillation_v_eps:
+    0.1 # 线速度震荡阈值（m/s）
+    # 速度变化小于此值视为震荡
+
+  oscillation_omega_eps:
+    0.1 # 角速度震荡阈值（rad/s）
+    # 角速度变化小于此值视为震荡
+
+  oscillation_recovery_min_duration:
+    10
+    # 震荡恢复模式的最短持续时间（秒）
+
+  oscillation_filter_duration:
+    10 # 震荡检测的滤波时间窗口（秒）
+    # 在此时间窗口内检测震荡
