@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+'''
+该脚本主要是用来获取图像数据集
+'''
 import rospy
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
