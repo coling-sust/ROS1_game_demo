@@ -1,4 +1,4 @@
-# ROS1_game_demo
+# about ROS1+yolo11+PaddleOCR's simulation demo 
 一个基于ros1（wsl2平台，Ubuntu20.04）+yolo11s+PaddleOCR的仿真项目  
 (注意因为使用的WSL2虚拟平台，有GPU直通，所以我的脚本代码中使用了tensorRT部署加速推理，若是虚拟机可能需要去除.engine格式权重换成.pt或者onnx兼容格式--这两个格式我在yolo_weight文件夹中都有提供)  
 启动方式:  
