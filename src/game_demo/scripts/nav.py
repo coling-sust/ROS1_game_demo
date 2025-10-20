@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-ROS + YOLO + OCR 智能导航系统
+ROS + YOLO + OCR 智能导航系统（原始版本）
 ------------------------------------------------
 该节点通过 YOLO（基于 TensorRT 加速）进行实时目标检测，
 并结合 PaddleOCR 实现车牌识别功能。
